@@ -179,7 +179,8 @@ var serving
 
 function DOWNLOAD (torrentId) {
   var client = new WebTorrent({
-    blocklist: argv.blocklist
+    blocklist: argv.blocklist,
+    storage: require('../lib/storage')
   })
   .on('error', errorAndExit)
 
@@ -444,17 +445,17 @@ function drawTorrent (torrent) {
     var storageMem = 0
     for (var i = 0; i < pieces.length; i++) {
       var piece = pieces[i]
-      if (piece.buffer)
-        storageMem += piece.buffer.length
       if (piece.verified || piece.blocksWritten === 0) {
         continue;
       }
       var bar = ''
       for (var j = 0; j < piece.blocks.length; j++) {
+        if (piece.blocks[j].buffer)
+          storageMem += piece.blocks[j].buffer.length
         if (j < piece.blocksHashed) {
           bar += '{green:█}';
         } else {
-          switch(piece.blocks[j]) {
+          switch(piece.blocks[j].state) {
           case 0:
             bar += '{red:█}';
             break;
@@ -465,7 +466,7 @@ function drawTorrent (torrent) {
             bar += '{blue:█}';
             break;
           default:
-            throw 'Invalid block state: ' + piece.blocks[j]
+            throw 'Invalid block state: ' + piece.blocks[j].state
           }
         }
       }
